@@ -1365,18 +1365,19 @@ func readEntries(b []byte, entries *indexEntries) (n int, err error) {
 	n += indexCountSize
 
 	entries.entries = make([]IndexEntry, count)
+
+	b = b[indexCountSize+indexTypeSize:]
 	for i := 0; i < count; i++ {
-		var ie IndexEntry
-		start := i*indexEntrySize + indexCountSize + indexTypeSize
-		end := start + indexEntrySize
-		if end > len(b) {
+		if len(b) < indexEntrySize {
 			return 0, fmt.Errorf("readEntries: data too short for indexEntry %d", i)
 		}
-		if err := ie.UnmarshalBinary(b[start:end]); err != nil {
+		if err = entries.entries[i].UnmarshalBinary(b[:indexEntrySize]); err != nil {
 			return 0, fmt.Errorf("readEntries: unmarshal error: %v", err)
 		}
-		entries.entries[i] = ie
-		n += indexEntrySize
+		b = b[indexEntrySize:]
 	}
+
+	n += count*indexEntrySize
+
 	return
 }
